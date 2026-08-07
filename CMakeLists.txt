@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_executable(roller
     src/main.cpp
-    src/quicksort.cpp
-    src/quicksort.h
     src/find_const.cpp
     src/find_const.h
 )
