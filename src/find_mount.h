@@ -2,4 +2,4 @@
 #include <fstream>
 #include <vector>
 
-void find_func(std::fstream, std::vector<float>);
+void find_func(std::fstream&, std::vector<float>&, int, int);

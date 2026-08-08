@@ -33,7 +33,7 @@ int main() {
     fstream outfile(outfilePath, ios::out | ios::trunc);
 
     cout << "Write the minimum and maximum length separated by a space: ";
-    int min, max; cin >> min >> max;
+    unsigned int min, max; cin >> min >> max;
 
     infile.seekg(0, ios::end);
     streamsize size = infile.tellg();
@@ -42,6 +42,10 @@ int main() {
     vector<float> data(size/sizeof(float));
 
     infile.read(reinterpret_cast<char*>(data.data()), size);
+    infile.close();
+
+    find_func(outfile, data, min, max); 
+    outfile.close();
 
     return 0;
 }

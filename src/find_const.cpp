@@ -1,28 +1,9 @@
 #include "find_const.h"
 #include <cmath>
-
-void QuickSort(std::vector<float>& data, int left, int right) {
-    if (left >= right) return;
-
-    float pivot = data[(left + right) / 2];
-    int i = left, j = right;
-
-    while (i <= j) {
-        while (data[i] < pivot) i++;
-        while (data[j] > pivot) j--;
-        if (i <= j) {
-            std::swap(data[i], data[j]);
-            i++;
-            j--;
-        }
-    }
-
-    QuickSort(data, left, j);
-    QuickSort(data, i, right);
-}
+#include <algorithm>
 
 std::pair<float, float> calc_const(std::vector<float> data) {
-    QuickSort(data, 0, data.size() - 1);
+    sort(data.begin(), data.end());
 
     std::pair<float, float> median_sigma;
 
@@ -34,7 +15,7 @@ std::pair<float, float> calc_const(std::vector<float> data) {
         temp.push_back(std::abs(i - median_sigma.first));
     }
 
-    QuickSort(temp, 0, temp.size() - 1);
+    sort(temp.begin(), temp.end());
 
     median_sigma.second = (temp.size() % 2 == 1) ? temp[temp.size() / 2] : (temp[temp.size() / 2] + temp[temp.size() / 2 - 1]) / 2;
 
