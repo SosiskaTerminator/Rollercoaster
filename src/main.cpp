@@ -3,14 +3,6 @@
 #include <string>
 #include "find_mount.h"
 
-/*
-1) найти медиану данных ✓
-2) найти mad от медианы ✓ median +- sigma*2
-3) на основе это получить горки и просто шум
-    3.1) функции для смещение границ горки ближе к "полу"
-4) просто вывод
-*/
-
 using namespace std;
 
 int main() {
@@ -44,7 +36,7 @@ int main() {
     infile.read(reinterpret_cast<char*>(data.data()), size);
     infile.close();
 
-    find_func(outfile, data, min, max); 
+    find_mount_func(outfile, data, min, max); 
     outfile.close();
 
     return 0;

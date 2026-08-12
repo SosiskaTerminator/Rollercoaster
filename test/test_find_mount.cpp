@@ -6,10 +6,11 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 std::string RunFindFunc(const std::vector<float>& data,
                         int min_width,
-                        int max_width) {
+                        int max_width, bool type) {
     static std::size_t test_number = 0;
 
     const auto file_path =
@@ -31,7 +32,9 @@ std::string RunFindFunc(const std::vector<float>& data,
 
     std::vector<float> test_data = data;
 
-    find_func(outfile, test_data, min_width, max_width);
+    if (type) { find_mount_func(outfile, test_data, min_width, max_width); }
+    else { reference(outfile, test_data, min_width, max_width); }
+    
 
     outfile.flush();
     outfile.seekg(0);
@@ -48,13 +51,13 @@ std::string RunFindFunc(const std::vector<float>& data,
 
 
 TEST(FindFuncTest, EmptyInputProducesNoOutput) {
-    EXPECT_TRUE(RunFindFunc({}, 1, 100).empty());
+    EXPECT_TRUE(RunFindFunc({}, 1, 100,true).empty());
 }
 
 TEST(FindFuncTest, ConstantSignalContainsNoMountains) {
     const std::vector<float> data(30, 5.0f);
 
-    EXPECT_TRUE(RunFindFunc(data, 1, 100).empty());
+    EXPECT_TRUE(RunFindFunc(data, 1, 100,true).empty());
 }
 
 TEST(FindFuncTest, FindsSingleMountain) {
@@ -65,8 +68,8 @@ TEST(FindFuncTest, FindsSingleMountain) {
     };
 
     EXPECT_EQ(
-        RunFindFunc(data, 5, 5),
-        "5 9\n"
+        RunFindFunc(data, 5, 10,true),
+        "4 10\n"
     );
 }
 
@@ -80,8 +83,8 @@ TEST(FindFuncTest, FindsSeveralSeparatedMountains) {
     };
 
     EXPECT_EQ(
-        RunFindFunc(data, 5, 5),
-        "10 14\n25 29\n"
+        RunFindFunc(data, 5, 10,true),
+        "9 15\n24 30\n"
     );
 }
 
@@ -93,7 +96,7 @@ TEST(FindFuncTest, RejectsMountainThatIsTooNarrow) {
     };
 
     EXPECT_TRUE(
-        RunFindFunc(data, 6, 100).empty()
+        RunFindFunc(data, 10, 100,true).empty()
     );
 }
 
@@ -105,7 +108,7 @@ TEST(FindFuncTest, RejectsMountainThatIsTooWide) {
     };
 
     EXPECT_TRUE(
-        RunFindFunc(data, 3, 4).empty()
+        RunFindFunc(data, 3, 4,true).empty()
     );
 }
 
@@ -115,7 +118,7 @@ TEST(FindFuncTest, MountainAtBeginningIsHandledCorrectly) {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    EXPECT_EQ(RunFindFunc(data, 4, 5), "0 4\n");
+    EXPECT_EQ(RunFindFunc(data, 4, 10,true), "0 5\n");
 }
 
 TEST(FindFuncTest, MountainAtEndIsHandledCorrectly) {
@@ -124,7 +127,7 @@ TEST(FindFuncTest, MountainAtEndIsHandledCorrectly) {
         10, 10, 10, 10, 10
     };
 
-    EXPECT_EQ(RunFindFunc(data, 5, 5), "10 14\n");
+    EXPECT_EQ(RunFindFunc(data, 5, 10,true), "9 14\n");
 }
 
 TEST(FindFuncTest, LowThresholdExpandsMountainBeyondHighThreshold) {
@@ -134,7 +137,7 @@ TEST(FindFuncTest, LowThresholdExpandsMountainBeyondHighThreshold) {
         0, 1, 1, 1, 2
     };
 
-    EXPECT_EQ(RunFindFunc(data, 7, 8), "1 8\n");
+    EXPECT_EQ(RunFindFunc(data, 5, 8,true), "4 9\n");
 }
 
 TEST(FindFuncTest, ValueExactlyAtHighIsNotAMountain) {
@@ -144,5 +147,69 @@ TEST(FindFuncTest, ValueExactlyAtHighIsNotAMountain) {
         0, 1, 1, 1, 1
     };
 
-    EXPECT_TRUE(RunFindFunc(data, 1, 100).empty());
+    EXPECT_TRUE(RunFindFunc(data, 1, 100,true).empty());
+}
+
+TEST(FindFuncTest, DifferentMount) {
+    std::fstream infile("..\\resource\\detector_src_32f.bin", std::ios::in | std::ios::binary);
+
+    infile.seekg(0, std::ios::end);
+    std::streamsize size = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    std::vector<float> data(size/sizeof(float));
+
+    infile.read(reinterpret_cast<char*>(data.data()), size);
+    infile.close();
+
+    std::string reference = RunFindFunc(data, 3, 1000, false);
+    std::string actual = RunFindFunc(data, 3, 1000, true);
+
+    EXPECT_NE(actual, reference);
+}
+
+TEST(FindFuncTest, CountOfMountActual) {
+    std::fstream infile("..\\resource\\detector_src_32f.bin", std::ios::in | std::ios::binary);
+
+    infile.seekg(0, std::ios::end);
+    std::streamsize size = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    std::vector<float> data(size/sizeof(float));
+
+    infile.read(reinterpret_cast<char*>(data.data()), size);
+    infile.close();
+
+    std::string temp = RunFindFunc(data, 3, 1000, true);
+    int n = std::count(temp.begin(), temp.end(), '\n');
+
+    EXPECT_EQ(n, 3527);
+}
+
+TEST(FindFuncTest, BorderOfEachMount) {
+    std::fstream infile("..\\resource\\detector_src_32f.bin", std::ios::in | std::ios::binary);
+
+    infile.seekg(0, std::ios::end);
+    std::streamsize size = infile.tellg();
+    infile.seekg(0, std::ios::beg);
+
+    std::vector<float> data(size/sizeof(float));
+
+    infile.read(reinterpret_cast<char*>(data.data()), size);
+    infile.close();
+
+    std::fstream refFile("..\\resource\\ref.txt", std::ios::in | std::ios::binary);
+
+    refFile.seekg(0, std::ios::end);
+    std::streamsize n = refFile.tellg();
+    refFile.seekg(0, std::ios::beg);
+
+    std::string ref; ref.resize(n);
+    refFile.read(&ref[0], n);
+    ref.erase(std::remove(ref.begin(), ref.end(), '\r'), ref.end());
+
+    std::string temp = RunFindFunc(data, 3, 1000, true);
+
+    EXPECT_EQ(ref.size(), temp.size());
+    EXPECT_EQ(ref.compare(temp), 0);
 }
